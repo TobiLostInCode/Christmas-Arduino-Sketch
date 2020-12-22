@@ -246,6 +246,190 @@ void letItSnow() {
 }
 /* #endregion */
 
+/* #region  LED's */
+#define lamp
+int BRIGHTNESS = 255;
+
+
+/*!
+Different Configurations since my desks & lamps use differnt length and types of LED Strips
+*/
+#ifdef lamp
+int STRIP_SIZE = 20;
+neoPixelType LED_TYPE = NEO_GRBW + NEO_KHZ800;
+uint32_t RED_COLOR = Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::Color(255,0,0));
+uint32_t GREEN_COLOR = Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::Color(0,255,0));
+uint32_t WHITE_COLOR = Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::Color(0,0,0,255));
+int SECTION_LENGTH = 3;
+int LED_SPACING = 0;
+float RANDOM_FACTOR = 2;
+#endif
+
+#ifdef officedesk
+int STRIP_SIZE = 47;
+neoPixelType LED_TYPE = NEO_GRBW + NEO_KHZ800;
+uint32_t RED_COLOR = Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::Color(255,0,0));
+uint32_t GREEN_COLOR = Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::Color(0,255,0));
+uint32_t WHITE_COLOR = Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::Color(0,0,0,255));
+int SECTION_LENGTH = 14;
+int LED_SPACING = 3;
+float RANDOM_FACTOR = 1.3;
+#endif
+
+#ifdef standingdesk
+int STRIP_SIZE = 112;
+neoPixelType LED_TYPE = NEO_GRB + NEO_KHZ800;
+uint32_t RED_COLOR = Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::Color(255,0,0));
+uint32_t GREEN_COLOR = Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::Color(0,255,0));
+uint32_t WHITE_COLOR = Adafruit_NeoPixel::Color(160,160,130);
+int SECTION_LENGTH = 14;
+int LED_SPACING = 3;
+float RANDOM_FACTOR = 1.3;
+#endif
+
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(STRIP_SIZE, 5, LED_TYPE);
+
+void fillStripWithRedGreenWhite(bool randomSectionLength = false, int duration = 150, bool showImmediately = true)
+{
+  int lastLedPosition = 0;
+  int colorPosition = 2;
+  uint32_t colorToFill;
+
+  while (lastLedPosition < STRIP_SIZE)
+  { 
+    switch (colorPosition)
+    {
+    case 0:
+      colorToFill = WHITE_COLOR;
+      break;
+    case 1:
+      colorToFill = RED_COLOR;
+      break;
+    case 2:
+      colorToFill = GREEN_COLOR;
+      break;
+    
+    default:
+      break;
+    }
+    
+    if (colorPosition == 2)
+    {
+      colorPosition = 0;
+    } 
+    else
+    {
+      ++colorPosition;
+    }
+
+    int numberToFill;
+    if (randomSectionLength)
+    {
+      numberToFill = random(3, int(RANDOM_FACTOR*SECTION_LENGTH));
+    }
+    else
+    {
+      numberToFill = SECTION_LENGTH;
+    }
+
+    strip.fill(colorToFill, lastLedPosition, numberToFill);
+    lastLedPosition += numberToFill + LED_SPACING;
+    
+    delay(duration);
+
+    if (showImmediately)
+    {
+      strip.show();
+    }
+  }
+
+  strip.show();
+}
+
+void shiftPixels(size_t steps, int duration = 100)
+{
+
+  for (size_t step = 0; step < steps; step++)
+  {
+    uint32_t lastPixelColor = strip.getPixelColor(STRIP_SIZE-1);
+
+    for (int position = STRIP_SIZE-1; position > -1; position--)
+    {
+      if (position > 0)
+      {
+        uint32_t prePixelColor = strip.getPixelColor(position-1);
+        strip.setPixelColor(position, prePixelColor);
+      }
+      else
+      {
+        strip.setPixelColor(0, lastPixelColor);
+      }  
+    }
+
+    strip.show();
+    delay(duration);
+  }
+}
+
+void pulseRedGreenWhite(size_t steps)
+{
+  for (size_t i = 0; i < steps; i++)
+  {
+    for (size_t brightness = BRIGHTNESS; brightness >= 1; brightness--)
+    {
+      strip.setBrightness(brightness);
+      strip.show();
+      delay(5);
+    }
+
+    fillStripWithRedGreenWhite(true, 50, false);
+    
+    for (size_t brightness = 1; brightness < BRIGHTNESS; brightness++)
+    {
+      strip.setBrightness(brightness);
+      strip.show();
+      delay(5);
+    }
+  }
+}
+
+void fastShiftWithRandomStep(size_t steps)
+{
+  for (size_t i = 0; i < steps; i++)
+  {
+   shiftPixels(random(3, 3*SECTION_LENGTH), 40);
+  }
+}
+/* #endregion */
+
+void ledMain()
+{
+  strip.begin();
+  strip.clear();
+  strip.setBrightness(BRIGHTNESS);
+  strip.show();
+  
+  Serial.println("fillStripWithRedGreenWhite: false, 150, LED_SPACING");
+  fillStripWithRedGreenWhite(false, 150);
+
+  Serial.println("shiftPixels 200");
+  shiftPixels(200);
+  
+
+  //Not great with lamp 
+  /* Serial.println("fillStripWithRedGreenWhite true, 50, LED_SPACING, false");
+  for (size_t i = 0; i < 10; i++)
+  {
+    strip.clear();
+    fillStripWithRedGreenWhite(true, 50, false);
+  } */ 
+  
+  
+  Serial.println("fastShiftWithRandomStep 200");
+  fastShiftWithRandomStep(200);
+  //pulseRedGreenWhite(30);
+}
+
 void oledMain()
 {
   setupDisplay();
@@ -262,8 +446,8 @@ void oledMain()
 void setup()
 {
   Serial.begin(9600);
-  
-  oledMain();
+  ledMain();
+  //oledMain();
 }
 
 void loop()
