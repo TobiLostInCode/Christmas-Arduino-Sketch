@@ -3,6 +3,7 @@
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_I2CDevice.h>
 #include <Wire.h>
+//#include <ChristmasSpirit.h>
 
 
 /* #region  Display */
@@ -44,7 +45,7 @@ void progressBar(bool progressbarBegin)
   }
   printSnowflake(nextProgressbarPosition, 17);
   display.display();
-  delay(120);
+  delay(100);
 
   progressbarPosition = nextProgressbarPosition;
 }
@@ -69,7 +70,7 @@ void setupDisplay()
     progressBar(false);
   }
   
-  delay(200);
+  delay(150);
   display.clearDisplay();
   display.stopscroll();
   display.display();
@@ -154,7 +155,7 @@ void printMessage()
 
   int shake_spuky = 40;
 
-  for (size_t i = 0; i < 5; i++)
+  for (size_t i = 0; i < 3; i++)
   {    
     scrollDisplay(0, 1, shake_spuky, RIGHT);
     scrollDisplay(0, 1, shake_spuky, LEFT);
@@ -165,7 +166,7 @@ void printMessage()
   
   int shake_halloween = 26;
 
-  for (size_t i = 0; i < 5; i++)
+  for (size_t i = 0; i < 3; i++)
   {
     scrollDisplay(2, 3, shake_halloween, RIGHT);
     scrollDisplay(2, 3, shake_halloween, LEFT);
@@ -229,7 +230,7 @@ void letItSnow() {
     }
 
     display.display(); // Show the display buffer on the screen
-    delay(80);        // Pause for 1/10 second
+    delay(60);        // Pause for 1/10 second
 
     // Then update coordinates of each flake...
     for(f=0; f< NUMFLAKES; f++) {
@@ -248,6 +249,7 @@ void letItSnow() {
 
 /* #region  LED's */
 #define lamp
+#define slow
 int BRIGHTNESS = 255;
 
 
@@ -259,14 +261,17 @@ int STRIP_SIZE = 20;
 neoPixelType LED_TYPE = NEO_GRBW + NEO_KHZ800;
 uint32_t RED_COLOR = Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::Color(255,0,0));
 uint32_t GREEN_COLOR = Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::Color(0,255,0));
-uint32_t WHITE_COLOR = Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::Color(0,0,0,255));
+uint32_t WHITE_COLOR = Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::Color(0,0,0,180));
 int SECTION_LENGTH = 3;
 int LED_SPACING = 0;
 float RANDOM_FACTOR = 2;
-#endif
+int DELAY_FAST = 60;
+int DELAY_SLOW = 150;
+bool RANDOM_ON = false;
+#endif 
 
 #ifdef officedesk
-int STRIP_SIZE = 47;
+int STRIP_SIZE = 167;
 neoPixelType LED_TYPE = NEO_GRBW + NEO_KHZ800;
 uint32_t RED_COLOR = Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::Color(255,0,0));
 uint32_t GREEN_COLOR = Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::Color(0,255,0));
@@ -274,6 +279,9 @@ uint32_t WHITE_COLOR = Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::Color(0,0,0
 int SECTION_LENGTH = 14;
 int LED_SPACING = 3;
 float RANDOM_FACTOR = 1.3;
+int DELAY_FAST = 40;
+int DELAY_SLOW = 150;
+bool RANDOM_ON = false;
 #endif
 
 #ifdef standingdesk
@@ -281,15 +289,19 @@ int STRIP_SIZE = 112;
 neoPixelType LED_TYPE = NEO_GRB + NEO_KHZ800;
 uint32_t RED_COLOR = Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::Color(255,0,0));
 uint32_t GREEN_COLOR = Adafruit_NeoPixel::gamma32(Adafruit_NeoPixel::Color(0,255,0));
-uint32_t WHITE_COLOR = Adafruit_NeoPixel::Color(160,160,130);
+uint32_t WHITE_COLOR = Adafruit_NeoPixel::Color(100,100,70);
 int SECTION_LENGTH = 14;
 int LED_SPACING = 3;
 float RANDOM_FACTOR = 1.3;
+int DELAY_FAST = 40;
+int DELAY_SLOW = 150;
+bool RANDOM_ON = false;
 #endif
+
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(STRIP_SIZE, 5, LED_TYPE);
 
-void fillStripWithRedGreenWhite(bool randomSectionLength = false, int duration = 150, bool showImmediately = true)
+void fillStripWithRedGreenWhite(bool randomSectionLength = false, int duration = DELAY_SLOW, bool showImmediately = true)
 {
   int lastLedPosition = 0;
   int colorPosition = 2;
@@ -393,11 +405,11 @@ void pulseRedGreenWhite(size_t steps)
   }
 }
 
-void fastShiftWithRandomStep(size_t steps)
+void shiftWithRandomStep(size_t steps)
 {
   for (size_t i = 0; i < steps; i++)
   {
-   shiftPixels(random(3, 3*SECTION_LENGTH), 40);
+   shiftPixels(random(3, 3*SECTION_LENGTH), DELAY_FAST);
   }
 }
 /* #endregion */
@@ -409,12 +421,15 @@ void ledMain()
   strip.setBrightness(BRIGHTNESS);
   strip.show();
   
-  Serial.println("fillStripWithRedGreenWhite: false, 150, LED_SPACING");
-  fillStripWithRedGreenWhite(false, 150);
-
-  Serial.println("shiftPixels 200");
-  shiftPixels(200);
   
+  Serial.println("fillStripWithRedGreenWhite: false, 150, LED_SPACING");
+  fillStripWithRedGreenWhite(RANDOM_ON);
+  
+
+  #ifdef slow
+  Serial.println("shiftPixels 200");
+  shiftPixels(20000);
+  #endif
 
   //Not great with lamp 
   /* Serial.println("fillStripWithRedGreenWhite true, 50, LED_SPACING, false");
@@ -424,10 +439,10 @@ void ledMain()
     fillStripWithRedGreenWhite(true, 50, false);
   } */ 
   
-  
-  Serial.println("fastShiftWithRandomStep 200");
-  fastShiftWithRandomStep(200);
-  //pulseRedGreenWhite(30);
+  #ifdef fast
+  Serial.println("shiftWithRandomStep 200");
+  shiftWithRandomStep(20000);
+  #endif
 }
 
 void oledMain()
@@ -435,7 +450,7 @@ void oledMain()
   setupDisplay();
   printMessage();
   
-  delay(500);
+  delay(300);
   display.clearDisplay();
   display.stopscroll();
 
